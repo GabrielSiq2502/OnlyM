@@ -7,28 +7,26 @@
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
+    using Core.Models;
+    using Core.Services.Media;
+    using Core.Services.Options;
+    using Core.Utils;
     using GalaSoft.MvvmLight;
     using GalaSoft.MvvmLight.CommandWpf;
     using GalaSoft.MvvmLight.Messaging;
     using GalaSoft.MvvmLight.Threading;
-    using OnlyM.Core.Models;
-    using OnlyM.Core.Services.Media;
-    using OnlyM.Core.Services.Options;
-    using OnlyM.Core.Utils;
+    using MediaElementAdaption;
+    using Models;
     using OnlyM.CoreSys;
     using OnlyM.CoreSys.Services.Snackbar;
-    using OnlyM.MediaElementAdaption;
-    using OnlyM.Models;
-    using OnlyM.PubSubMessages;
-    using OnlyM.Services.Dialogs;
-    using OnlyM.Services.FrozenVideoItems;
-    using OnlyM.Services.HiddenMediaItems;
-    using OnlyM.Services.MediaChanging;
-    using OnlyM.Services.MetaDataQueue;
-    using OnlyM.Services.Pages;
-    using OnlyM.Services.PdfOptions;
     using OnlyM.Services.WebBrowser;
+    using PubSubMessages;
     using Serilog;
+    using Services.FrozenVideoItems;
+    using Services.HiddenMediaItems;
+    using Services.MediaChanging;
+    using Services.MetaDataQueue;
+    using Services.Pages;
 
     // ReSharper disable once ClassNeverInstantiated.Global
     internal sealed class OperatorViewModel : ViewModelBase, IDisposable
@@ -41,11 +39,9 @@
         private readonly IMediaStatusChangingService _mediaStatusChangingService;
         private readonly IHiddenMediaItemsService _hiddenMediaItemsService;
         private readonly IFrozenVideosService _frozenVideosService;
-        private readonly IPdfOptionsService _pdfOptionsService;
         private readonly IActiveMediaItemsService _activeMediaItemsService;
         private readonly ISnackbarService _snackbarService;
-        private readonly IDialogService _dialogService;
-        
+
         private readonly MetaDataQueueProducer _metaDataProducer = new MetaDataQueueProducer();
         private readonly CancellationTokenSource _metaDataCancellationTokenSource = new CancellationTokenSource();
         
@@ -65,9 +61,7 @@
             IHiddenMediaItemsService hiddenMediaItemsService,
             IActiveMediaItemsService activeMediaItemsService,
             IFrozenVideosService frozenVideosService,
-            IPdfOptionsService pdfOptionsService,
-            ISnackbarService snackbarService,
-            IDialogService dialogService)
+            ISnackbarService snackbarService)
         {
             _mediaProviderService = mediaProviderService;
             _mediaStatusChangingService = mediaStatusChangingService;
@@ -76,11 +70,9 @@
             _hiddenMediaItemsService.UnhideAllEvent += HandleUnhideAllEvent;
 
             _snackbarService = snackbarService;
-            _dialogService = dialogService;
 
             _activeMediaItemsService = activeMediaItemsService;
             _frozenVideosService = frozenVideosService;
-            _pdfOptionsService = pdfOptionsService;
 
             _thumbnailService = thumbnailService;
             _thumbnailService.ThumbnailsPurgedEvent += HandleThumbnailsPurgedEvent;
@@ -104,7 +96,7 @@
             };
             _optionsService.IncludeBlankScreenItemChangedEvent += async (sender, e) =>
             {
-                await HandleIncludeBlankScreenItemChangedEvent();
+                await HandleIncludeBlankScreenItemChangedEvent(sender, e);
             };
 
             folderWatcherService.ChangesFoundEvent += HandleFileChangesFoundEvent;
@@ -116,7 +108,7 @@
             _pageService.MediaPositionChangedEvent += HandleMediaPositionChangedEvent;
             _pageService.MediaNearEndEvent += async (sender, e) =>
             {
-                await HandleMediaNearEndEvent(e);
+                await HandleMediaNearEndEvent(sender, e);
             };
             _pageService.NavigationEvent += HandleNavigationEvent;
             _pageService.WebStatusEvent += HandleWebStatusEvent;
@@ -150,8 +142,6 @@
 
         public RelayCommand<Guid> NextSlideCommand { get; set; }
 
-        public RelayCommand<Guid> EnterStartOffsetEditModeCommand { get; set; }
-
         public int ThumbnailColWidth
         {
             get => _thumbnailColWidth;
@@ -164,7 +154,7 @@
                 }
             }
         }
-
+    
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_metaDataCancellationTokenSource", Justification = "False Positive")]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_metaDataProducer", Justification = "False Positive")]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "_metaDataConsumer", Justification = "False Positive")]
@@ -182,18 +172,14 @@
 
         private void HandleNavigationEvent(object sender, NavigationEventArgs e)
         {
-            if (!e.PageName.Equals(_pageService.OperatorPageName))
+            if (e.PageName.Equals(_pageService.OperatorPageName))
             {
-                return;
+                if (_pendingLoadMediaItems)
+                {
+                    _pendingLoadMediaItems = false;
+                    LoadMediaItems();
+                }
             }
-
-            if (!_pendingLoadMediaItems)
-            {
-                return;
-            }
-
-            _pendingLoadMediaItems = false;
-            LoadMediaItems();
         }
 
         private void HandleOperatingDateChangedEvent(object sender, EventArgs e)
@@ -229,7 +215,7 @@
             }
         }
 
-        private async Task HandleIncludeBlankScreenItemChangedEvent()
+        private async Task HandleIncludeBlankScreenItemChangedEvent(object sender, EventArgs e)
         {
             if (!_optionsService.IncludeBlankScreenItem)
             {
@@ -299,12 +285,15 @@
             }
         }
 
-        private async Task HandleMediaNearEndEvent(MediaNearEndEventArgs e)
+        private async Task HandleMediaNearEndEvent(object sender, MediaNearEndEventArgs e)
         {
             var item = GetMediaItem(e.MediaItemId);
-            if (item != null && item.PauseOnLastFrame)
+            if (item != null)
             {
-                await MediaPauseControl(item.Id);
+                if (item.PauseOnLastFrame)
+                {
+                    await MediaPauseControl(item.Id);
+                }
             }
         }
 
@@ -353,7 +342,7 @@
             DispatcherHelper.CheckBeginInvokeOnUI(LoadMediaItems);
         }
 
-        private void HandleMediaMonitorChangedEvent(object sender, MonitorChangedEventArgs e)
+        private void HandleMediaMonitorChangedEvent(object sender, EventArgs e)
         {
             ChangePlayButtonEnabledStatus();
         }
@@ -511,30 +500,6 @@
             PreviousSlideCommand = new RelayCommand<Guid>(GotoPreviousSlide);
 
             NextSlideCommand = new RelayCommand<Guid>(GotoNextSlide);
-            
-            EnterStartOffsetEditModeCommand = new RelayCommand<Guid>(EnterStartOffsetEditMode);
-        }
-
-        private async void EnterStartOffsetEditMode(Guid mediaItemId)
-        {
-            var mediaItem = GetMediaItem(mediaItemId);
-            if (mediaItem != null && (!mediaItem.IsMediaActive || mediaItem.IsPaused))
-            {
-                var maxStartTimeSeconds = (int)((double)mediaItem.DurationDeciseconds / 10);
-
-                var start = await _dialogService.GetStartOffsetAsync(
-                    Path.GetFileName(mediaItem.FilePath),
-                    maxStartTimeSeconds);
-
-                if (start != null)
-                {
-                    var deciSecs = (int)(start.Value.TotalSeconds * 10);
-                    if (deciSecs < mediaItem.DurationDeciseconds)
-                    {
-                        mediaItem.PlaybackPositionDeciseconds = deciSecs;
-                    }
-                }
-            }
         }
 
         private void FreezeVideoOnLastFrame(Guid mediaItemId)
@@ -562,20 +527,8 @@
             var mediaItem = GetMediaItem(mediaItemId);
             if (mediaItem != null)
             {
-                SavePdfOptions(mediaItem);
                 mediaItem.IsCommandPanelOpen = false;
             }
-        }
-
-        private void SavePdfOptions(MediaItem mediaItem)
-        {
-            _pdfOptionsService.Add(
-                mediaItem.FilePath, 
-                new PdfOptions
-                {
-                    PageNumber = Convert.ToInt32(mediaItem.ChosenPdfPage),
-                    Style = mediaItem.ChosenPdfViewStyle,
-                });
         }
 
         private void OpenCommandPanel(Guid mediaItemId)
@@ -927,7 +880,6 @@
             
             _hiddenMediaItemsService.Init(MediaItems);
             _frozenVideosService.Init(MediaItems);
-            _pdfOptionsService.Init(MediaItems);
 
             SortMediaItems();
 
@@ -967,7 +919,7 @@
                 AllowPause = _optionsService.AllowVideoPause,
                 AllowPositionSeeking = _optionsService.AllowVideoPositionSeeking,
                 AllowUseMirror = _optionsService.AllowMirror,
-                UseMirror = _optionsService.UseMirrorByDefault,
+                UseMirror = _optionsService.UseMirrorByDefault
             };
             
             return result;
@@ -992,7 +944,7 @@
                     Title = Properties.Resources.BLANK_SCREEN,
                     FilePath = blankScreenPath,
                     FileNameAsSubTitle = null,
-                    LastChanged = DateTime.UtcNow.Ticks,
+                    LastChanged = DateTime.UtcNow.Ticks
                 };
 
                 MediaItems.Insert(0, item);
@@ -1052,22 +1004,22 @@
             }
         }
 
-        private void AutoRotateImageIfRequired(MediaItem item)
+        private bool AutoRotateImageIfRequired(MediaItem item)
         {
-            if (item.MediaType.Classification != MediaClassification.Image)
+            if (item.MediaType.Classification == MediaClassification.Image)
             {
-                return;
+                if (GraphicsUtils.AutoRotateIfRequired(item.FilePath))
+                {
+                    // auto-rotated so refresh the thumbnail...
+                    item.ThumbnailImageSource = null;
+                    item.LastChanged = DateTime.UtcNow.Ticks;
+                    _metaDataProducer.Add(item);
+
+                    return true;
+                }
             }
 
-            if (!GraphicsUtils.AutoRotateIfRequired(item.FilePath))
-            {
-                return;
-            }
-
-            // auto-rotated so refresh the thumbnail...
-            item.ThumbnailImageSource = null;
-            item.LastChanged = DateTime.UtcNow.Ticks;
-            _metaDataProducer.Add(item);
+            return false;
         }
 
         private void HandleAutoRotateChangedEvent(object sender, EventArgs e)

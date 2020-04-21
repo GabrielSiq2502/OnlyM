@@ -8,13 +8,15 @@
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:magnifierControl="clr-namespace:OnlyM.CustomControls.MagnifierControl;assembly=OnlyM.CustomControls"
         DataContext="{Binding Media, Mode=OneWay, Source={StaticResource Locator}}"
+        WindowStyle="None" 
         Background="Black" 
+        ShowInTaskbar="False" 
+        ResizeMode="NoResize" 
         mc:Ignorable="d"
-        Title="OnlyM Media Window" 
+        Title="MediaWindow" 
         Height="500"
         Width="500"
-        Closing="WindowClosing" 
-        SizeChanged="WindowSizeChanged" >
+        Closing="WindowClosing" SizeChanged="WindowSizeChanged">
 
     <Window.Resources>
         <ResourceDictionary>

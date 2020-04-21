@@ -3,7 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using OnlyM.Core.Models;
+    using Core.Models;
 
     internal class ActiveMediaItemsService : IActiveMediaItemsService
     {

@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.IO;
     using System.Linq;
     using System.Threading.Tasks;
@@ -9,15 +10,15 @@
     using System.Windows.Controls;
     using System.Windows.Media;
     using System.Windows.Media.Animation;
+    using System.Windows.Media.Imaging;
     using System.Windows.Threading;
+    using Core.Models;
+    using Core.Services.Options;
     using GalaSoft.MvvmLight.Threading;
+    using ImagesCache;
+    using Models;
     using OnlyM.Core.Extensions;
-    using OnlyM.Core.Models;
-    using OnlyM.Core.Services.Options;
     using OnlyM.Core.Utils;
-    using OnlyM.CoreSys;
-    using OnlyM.Models;
-    using OnlyM.Services.ImagesCache;
     using OnlyM.Slides;
     using OnlyM.Slides.Models;
     using Serilog;
@@ -265,7 +266,7 @@
             {
                 MediaItemId = id,
                 Classification = mediaClassification,
-                Change = change,
+                Change = change
             };
         }
 
@@ -276,7 +277,7 @@
                 MediaItemId = id,
                 Transition = change,
                 OldSlideIndex = oldIndex,
-                NewSlideIndex = newIndex,
+                NewSlideIndex = newIndex
             };
         }
 
@@ -350,7 +351,7 @@
                 {
                     Duration = TimeSpan.FromSeconds(fadeTime),
                     From = 1.0,
-                    To = 0.0,
+                    To = 0.0
                 };
 
                 fadeOut.Completed += (sender, args) =>
@@ -372,7 +373,7 @@
 
             var imageSrc = _optionsService.CacheImages
                 ? ImageCache.GetImage(imageFile)
-                : GraphicsUtils.GetBitmapImageWithCacheOnLoad(imageFile);
+                : GetBitmapImageWithCacheOnLoad(imageFile);
 
             if (!shouldFadeIn)
             {
@@ -399,7 +400,7 @@
                             // note that the fade in time is longer than fade out - just seems to look better
                             Duration = TimeSpan.FromSeconds(fadeTime * 1.2),
                             From = 0.0,
-                            To = 1.0,
+                            To = 1.0
                         };
 
                         if (completed != null)
@@ -413,6 +414,19 @@
             }
         }
 
+        private BitmapImage GetBitmapImageWithCacheOnLoad(string imageFile)
+        {
+            var bmp = new BitmapImage();
+
+            bmp.BeginInit();
+            bmp.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
+            bmp.UriSource = new Uri(imageFile);
+            bmp.CacheOption = BitmapCacheOption.OnLoad;
+            bmp.EndInit();
+
+            return bmp;
+        }
+
         private void InitFromSlideshowFile(string mediaItemFilePath)
         {
             var sf = new SlideFile(mediaItemFilePath);
@@ -421,20 +435,13 @@
                 return;
             }
 
-            sf.ExtractImages(GetStagingFolderForSlideshow());
+            sf.ExtractImages(_slideshowStagingFolder);
 
             _slides = sf.GetSlides(includeBitmapImage: false).ToList();
             _shouldLoopSlideshow = sf.Loop;
             _autoPlaySlideshow = sf.AutoPlay;
             _autoCloseSlideshow = sf.AutoClose;
             _autoPlaySlideshowDwellTime = sf.DwellTimeMilliseconds;
-        }
-
-        private string GetStagingFolderForSlideshow()
-        {
-            var folder = Path.Combine(_slideshowStagingFolder, _slideshowGuid.ToString("N"));
-            Directory.CreateDirectory(folder);
-            return folder;
         }
 
         private void ConfigureSlideshowAutoPlayTimer()
@@ -486,7 +493,7 @@
 
             var fadeType = GetSlideFadeType(slide, previousSlide, direction);
             
-            var imageFilePath = Path.Combine(GetStagingFolderForSlideshow(), slide.ArchiveEntryName);
+            var imageFilePath = Path.Combine(_slideshowStagingFolder, slide.ArchiveEntryName);
 
             PlaceImage(
                 mediaItemId,

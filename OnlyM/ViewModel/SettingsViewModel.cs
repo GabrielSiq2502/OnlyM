@@ -6,23 +6,23 @@
     using System.Globalization;
     using System.IO;
     using System.Linq;
+    using AutoUpdates;
+    using Core.Extensions;
+    using Core.Models;
+    using Core.Services.Media;
+    using Core.Services.Monitors;
+    using Core.Services.Options;
     using GalaSoft.MvvmLight;
     using GalaSoft.MvvmLight.CommandWpf;
     using GalaSoft.MvvmLight.Messaging;
     using Microsoft.WindowsAPICodePack.Dialogs;
-    using OnlyM.AutoUpdates;
-    using OnlyM.Core.Extensions;
-    using OnlyM.Core.Models;
-    using OnlyM.Core.Services.Media;
-    using OnlyM.Core.Services.Monitors;
-    using OnlyM.Core.Services.Options;
+    using Models;
     using OnlyM.CoreSys.Services.Snackbar;
-    using OnlyM.Models;
-    using OnlyM.PubSubMessages;
-    using OnlyM.Services;
-    using OnlyM.Services.MediaChanging;
-    using OnlyM.Services.Pages;
+    using PubSubMessages;
     using Serilog.Events;
+    using Services;
+    using Services.MediaChanging;
+    using Services.Pages;
     
     // ReSharper disable once UnusedMember.Global
     internal class SettingsViewModel : ViewModelBase
@@ -107,12 +107,13 @@
             get => _optionsService.MaxItemCount.ToString();
             set
             {
-                if (!string.IsNullOrEmpty(value) && 
-                    !_optionsService.MaxItemCount.ToString().Equals(value) && 
-                    int.TryParse(value, out var count))
+                if (!string.IsNullOrEmpty(value) && !_optionsService.MaxItemCount.ToString().Equals(value))
                 {
-                    _optionsService.MaxItemCount = count;
-                    RaisePropertyChanged();
+                    if (int.TryParse(value, out var count))
+                    {
+                        _optionsService.MaxItemCount = count;
+                        RaisePropertyChanged();
+                    }
                 }
             }
         }
@@ -814,8 +815,6 @@
 
         public IEnumerable<MonitorItem> Monitors => _monitors;
 
-        public bool CanChangeMonitor => !MediaWindowed;
-
         public string MonitorId
         {
             get => _optionsService.MediaMonitorId;
@@ -837,28 +836,6 @@
             }
         }
 
-        public bool MediaWindowed
-        {
-            get => _optionsService.MediaWindowed;
-            set
-            {
-                if (_optionsService.MediaWindowed != value)
-                {
-                    if (!value && IsMediaActive && _optionsService.MediaMonitorId == null)
-                    {
-                        // prevent unchecking of windowed mode when media is active.
-                        _snackbarService.EnqueueWithOk(Properties.Resources.NO_DESELECT_WINDOWED, Properties.Resources.OK);
-                    }
-                    else
-                    {
-                        _optionsService.MediaWindowed = value;
-                        RaisePropertyChanged();
-                        RaisePropertyChanged(nameof(CanChangeMonitor));
-                    }
-                }
-            }
-        }
-
         private void OnShutDown(ShutDownMessage obj)
         {
             _optionsService.RecentlyUsedMediaFolders = _recentlyUsedMediaFolders.GetFolders().ToList();
@@ -874,7 +851,7 @@
                 result.Add(new MagnifierShapeItem
                 {
                     Shape = v,
-                    Name = v.GetDescriptiveName(),
+                    Name = v.GetDescriptiveName()
                 });
             }
 
@@ -890,7 +867,7 @@
                 result.Add(new MagnifierSizeItem
                 {
                     Size = v,
-                    Name = v.GetDescriptiveName(),
+                    Name = v.GetDescriptiveName()
                 });
             }
 
@@ -906,7 +883,7 @@
                 result.Add(new ImageFadeSpeed
                 {
                     Speed = v,
-                    Name = v.GetDescriptiveName(),
+                    Name = v.GetDescriptiveName()
                 });
             }
 
@@ -922,7 +899,7 @@
                 result.Add(new ImageFade
                 {
                     Fade = v,
-                    Name = v.GetDescriptiveName(),
+                    Name = v.GetDescriptiveName()
                 });
             }
 
@@ -938,7 +915,7 @@
                 result.Add(new LoggingLevel
                 {
                     Level = v,
-                    Name = v.GetDescriptiveName(),
+                    Name = v.GetDescriptiveName()
                 });
             }
 
@@ -951,7 +928,7 @@
             return new[]
             {
                 new RenderingMethodItem { Method = RenderingMethod.MediaFoundation, Name = @"Media Foundation" },
-                new RenderingMethodItem { Method = RenderingMethod.Ffmpeg, Name = @"Ffmpeg" },
+                new RenderingMethodItem { Method = RenderingMethod.Ffmpeg, Name = @"Ffmpeg" }
             };
         }
 
@@ -963,8 +940,8 @@
                 new MonitorItem
                 {
                     MonitorName = Properties.Resources.MONITOR_NONE,
-                    FriendlyName = Properties.Resources.MONITOR_NONE,
-                },
+                    FriendlyName = Properties.Resources.MONITOR_NONE
+                }
             };
 
             var monitors = _monitorsService.GetSystemMonitors();
@@ -1017,7 +994,7 @@
                 EnsureReadOnly = false,
                 EnsureValidNames = true,
                 Multiselect = false,
-                ShowPlacesList = true,
+                ShowPlacesList = true
             };
 
             var result = dialog.ShowDialog();
@@ -1060,7 +1037,7 @@
                         result.Add(new LanguageItem
                         {
                             LanguageId = c.Name,
-                            LanguageName = c.EnglishName,
+                            LanguageName = c.EnglishName
                         });
                     }
                     catch (CultureNotFoundException)
@@ -1076,7 +1053,7 @@
                 result.Add(new LanguageItem
                 {
                     LanguageId = c.Name,
-                    LanguageName = c.EnglishName,
+                    LanguageName = c.EnglishName
                 });
             }
 

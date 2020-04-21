@@ -7,8 +7,8 @@
     using CommonServiceLocator;
     using GalaSoft.MvvmLight.Messaging;
     using OnlyM.PubSubMessages;
-    using OnlyM.Services.DragAndDrop;
     using OnlyM.ViewModel;
+    using Services.DragAndDrop;
 
     /// <summary>
     /// Interaction logic for OperatorPage.xaml
@@ -45,11 +45,6 @@
         private void OnlyMOperatorPage_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             OperatorViewModel vm = (OperatorViewModel)DataContext;
-
-            if (vm == null)
-            {
-                return;
-            }
 
             if (e.NewSize.Width >= 500)
             {

@@ -2,7 +2,8 @@
 {
     using System;
     using System.IO;
-    using OnlyM.Core.Models;
+    using Models;
+    using OnlyM.Core.Services.WebShortcuts;
     using OnlyM.Core.Utils;
     using Serilog;
     using Unosquare.FFME.Shared;
@@ -79,7 +80,7 @@
                 return new MediaMetaData
                 {
                     Title = StripNewLines(title),
-                    Duration = info.Duration,
+                    Duration = info.Duration
                 };
             }
             catch (MediaContainerException)
@@ -94,7 +95,7 @@
             return new MediaMetaData
             {
                 Title = Path.GetFileNameWithoutExtension(mediaItemFilePath),
-                Duration = TimeSpan.Zero,
+                Duration = TimeSpan.Zero
             };
         }
 
@@ -103,7 +104,7 @@
             return new MediaMetaData
             {
                 Title = Path.GetFileNameWithoutExtension(mediaItemFilePath),
-                Duration = TimeSpan.Zero,
+                Duration = TimeSpan.Zero
             };
         }
 
@@ -116,7 +117,7 @@
                 return new MediaMetaData
                 {
                     Title = StripNewLines(tf.Tag?.Title),
-                    Duration = tf.Properties?.Duration ?? TimeSpan.Zero,
+                    Duration = tf.Properties?.Duration ?? TimeSpan.Zero
                 };
             }
         }

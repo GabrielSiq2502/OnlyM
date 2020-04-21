@@ -7,15 +7,15 @@
     using System.Windows;
     using System.Windows.Media;
     using System.Windows.Media.Imaging;
+    using Database;
     using Microsoft.WindowsAPICodePack.Shell;
-    using OnlyM.Core.Models;
-    using OnlyM.Core.Services.Database;
-    using OnlyM.Core.Services.Options;
+    using Models;
     using OnlyM.Core.Services.WebShortcuts;
-    using OnlyM.Core.Utils;
     using OnlyM.CoreSys;
     using OnlyM.Slides;
+    using Options;
     using Serilog;
+    using Utils;
 
     public sealed class ThumbnailService : IThumbnailService
     {
@@ -175,10 +175,6 @@
             try
             {
                 var o = ShellObject.FromParsingName(originalPath);
-                if (o?.Thumbnail?.BitmapSource == null)
-                {
-                    return _standardPdfThumbnail.Value;
-                }
 
                 var encoder = new JpegBitmapEncoder();
                 encoder.Frames.Add(BitmapFrame.Create(o.Thumbnail.BitmapSource));

@@ -2,7 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
-    using OnlyM.Core.Models;
+    using Models;
 
     public interface IMediaProviderService
     {

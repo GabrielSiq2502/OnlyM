@@ -5,12 +5,12 @@
     using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
+    using Core.Models;
+    using Core.Services.Media;
+    using Core.Services.Options;
     using GalaSoft.MvvmLight.Threading;
-    using OnlyM.Core.Models;
-    using OnlyM.Core.Services.Media;
-    using OnlyM.Core.Services.Options;
+    using Models;
     using OnlyM.CoreSys;
-    using OnlyM.Models;
     using OnlyM.Slides;
     using Serilog;
 
@@ -59,7 +59,7 @@
 
         private void RunConsumer()
         {
-            Task.Run(RunConsumerTask, _cancellationToken);
+            Task.Run(() => { RunConsumerTask(); }, _cancellationToken);
         }
 
         private void RunConsumerTask()
@@ -83,7 +83,8 @@
                         }
                         else
                         {
-                            ItemCompleted(nextItem);
+                            Log.Logger.Debug($"Done item {nextItem.FilePath}");
+                            ItemCompletedEvent?.Invoke(this, new ItemMetaDataPopulatedEventArgs { MediaItem = nextItem });
                         }
 
                         Log.Logger.Verbose("Metadata queue size (consumer) = {QueueSize}", _collection.Count);
@@ -93,22 +94,12 @@
                             AllItemsCompletedEvent?.Invoke(this, EventArgs.Empty);
                         }
                     }
-                    else
-                    {
-                        ItemCompleted(nextItem);
-                    }
                 }
             }
             catch (OperationCanceledException)
             {
                 Log.Logger.Debug("Metadata consumer closed");
             }
-        }
-
-        private void ItemCompleted(MediaItem nextItem)
-        {
-            Log.Logger.Debug($"Done item {nextItem.FilePath}");
-            ItemCompletedEvent?.Invoke(this, new ItemMetaDataPopulatedEventArgs { MediaItem = nextItem });
         }
 
         private void ReplaceInQueue(MediaItem mediaItem)
@@ -174,15 +165,12 @@
 
                 DispatcherHelper.CheckBeginInvokeOnUI(() =>
                 {
-                    if (!IsDurationAndTitlePopulated(mediaItem))
-                    {
-                        mediaItem.DurationDeciseconds =
-                            metaData == null ? 0 : (int)(metaData.Duration.TotalSeconds * 10);
-                        mediaItem.Title = GetMediaTitle(mediaItem.FilePath, metaData);
-                        mediaItem.FileNameAsSubTitle = _optionsService.UseInternalMediaTitles
-                            ? Path.GetFileName(mediaItem.FilePath)
-                            : null;
-                    }
+                    mediaItem.DurationDeciseconds =
+                        metaData == null ? 0 : (int)(metaData.Duration.TotalSeconds * 10);
+                    mediaItem.Title = GetMediaTitle(mediaItem.FilePath, metaData);
+                    mediaItem.FileNameAsSubTitle = _optionsService.UseInternalMediaTitles
+                        ? Path.GetFileName(mediaItem.FilePath)
+                        : null;
                 });
             }
         }
@@ -203,10 +191,7 @@
                 {
                     DispatcherHelper.CheckBeginInvokeOnUI(() =>
                     {
-                        if (!IsThumbnailPopulated(mediaItem))
-                        {
-                            mediaItem.ThumbnailImageSource = GraphicsUtils.ByteArrayToImage(thumb);
-                        }
+                        mediaItem.ThumbnailImageSource = GraphicsUtils.ByteArrayToImage(thumb);
                     });
                 }
             }

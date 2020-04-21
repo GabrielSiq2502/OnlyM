@@ -16,7 +16,6 @@
 
     public static class GraphicsUtils
     {
-        private const int MaxDpi = 1200;
         private static readonly object _tagLibLocker = new object();
 
         public static bool AutoRotateIfRequired(string itemFilePath)
@@ -102,10 +101,7 @@
             return Downsize(image, maxImageWidth, maxImageHeight);
         }
 
-        public static BitmapSource Downsize(
-            BitmapSource image, 
-            int maxImageWidth, 
-            int maxImageHeight)
+        public static BitmapSource Downsize(BitmapSource image, int maxImageWidth, int maxImageHeight)
         {
             var factorWidth = (double)maxImageWidth / image.PixelWidth;
             var factorHeight = (double)maxImageHeight / image.PixelHeight;
@@ -249,13 +245,6 @@
             bmp.CacheOption = BitmapCacheOption.OnLoad;
             bmp.EndInit();
 
-            if (IsBadDpi(bmp))
-            {
-                // NB - if the DpiX and DpiY metadata is bad then the bitmap can't be displayed
-                // correctly, so fix it here...
-                return FixBadDpi(imageFile);
-            }
-
             return bmp;
         }
 
@@ -392,8 +381,8 @@
                     FileName = ffmpegPath,
                     Arguments = arguments,
                     UseShellExecute = false,
-                    CreateNoWindow = true,
-                },
+                    CreateNoWindow = true
+                }
             };
 
             using (p)
@@ -460,34 +449,6 @@
             }
 
             return false;
-        }
-
-        private static bool IsBadDpi(BitmapImage bmp)
-        {
-            return bmp.DpiX > MaxDpi || bmp.DpiY > MaxDpi;
-        }
-
-        private static BitmapImage FixBadDpi(string imageFile)
-        {
-            using (var imageFactory = new ImageFactory())
-            {
-                using (MemoryStream outStream = new MemoryStream())
-                {
-                    imageFactory
-                        .Load(imageFile)
-                        .Resolution(96, 96)
-                        .Save(outStream);
-
-                    var bitmapImage = new BitmapImage();
-
-                    bitmapImage.BeginInit();
-                    bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-                    bitmapImage.StreamSource = outStream;
-                    bitmapImage.EndInit();
-
-                    return bitmapImage;
-                }
-            }
         }
     }
 }

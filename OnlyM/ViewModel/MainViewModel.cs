@@ -7,24 +7,22 @@ namespace OnlyM.ViewModel
     using System.Windows;
     using System.Windows.Interop;
     using System.Windows.Media;
+    using AutoUpdates;
+    using Core.Services.CommandLine;
+    using Core.Services.Options;
     using GalaSoft.MvvmLight;
     using GalaSoft.MvvmLight.CommandWpf;
     using GalaSoft.MvvmLight.Messaging;
     using MaterialDesignThemes.Wpf;
-    using OnlyM.AutoUpdates;
-    using OnlyM.Core.Models;
-    using OnlyM.Core.Services.CommandLine;
-    using OnlyM.Core.Services.Options;
+    using Models;
     using OnlyM.Core.Utils;
     using OnlyM.CoreSys.Services.Snackbar;
-    using OnlyM.Models;
-    using OnlyM.PubSubMessages;
-    using OnlyM.Services.DragAndDrop;
-    using OnlyM.Services.HiddenMediaItems;
-    using OnlyM.Services.MediaChanging;
-    using OnlyM.Services.Pages;
-    using Serilog;
+    using PubSubMessages;
     using Serilog.Events;
+    using Services.DragAndDrop;
+    using Services.HiddenMediaItems;
+    using Services.MediaChanging;
+    using Services.Pages;
     
     // ReSharper disable once ClassNeverInstantiated.Global
     internal class MainViewModel : ViewModelBase
@@ -96,7 +94,8 @@ namespace OnlyM.ViewModel
                 _pageService.InitMediaWindow();
             }
 
-            SanityChecks();
+            GetVersionData();
+            CheckLogLevel();
         }
 
         // commands...
@@ -202,6 +201,8 @@ namespace OnlyM.ViewModel
             }
         }
 
+        public object AllowsTransparency => !_commandLineService.ObsCompatible;
+
         private void OnMediaListUpdating(MediaListUpdatingMessage message)
         {
             IsMediaListLoading = true;
@@ -236,79 +237,45 @@ namespace OnlyM.ViewModel
             RaisePropertyChanged(nameof(IsUnhideButtonVisible));
         }
 
-        private void HandleMediaMonitorChangedEvent(object sender, MonitorChangedEventArgs e)
+        private void HandleMediaMonitorChangedEvent(object sender, EventArgs e)
         {
             RaisePropertyChanged(nameof(AlwaysOnTop));
         }
-        
-        private void SanityChecks()
+
+        private void CheckLogLevel()
         {
-            // checks are performed in order of importance and subsequent
-            // checks only made if previous ones pass.
-            Task.Delay(2000).ContinueWith(_ => CheckControlledFolderAccess() &&
-                                               CheckVersionData() && CheckLogLevel());
+            Task.Delay(3000).ContinueWith(_ =>
+            {
+                switch (_optionsService.LogEventLevel)
+                {
+                    case LogEventLevel.Debug:
+                    case LogEventLevel.Verbose:
+                        _snackbarService.EnqueueWithOk(Properties.Resources.LOGGING_LEVEL_HIGH, Properties.Resources.OK);
+                        break;
+                }
+            });
         }
 
-        private bool CheckControlledFolderAccess()
+        private void GetVersionData()
         {
-            // Windows 10 Controlled folder access may be enabled preventing
-            // OnlyM from writing to its database.
-            var databaseFolder = FileUtils.GetOnlyMDatabaseFolder();
-
-            var tempFileName = Guid.NewGuid().ToString("N");
-            var fullPath = Path.Combine(databaseFolder, tempFileName);
-
-            try
+            Task.Delay(2000).ContinueWith(_ =>
             {
-                File.Create(fullPath).Close();
-                File.Delete(fullPath);
+                var latestVersion = VersionDetection.GetLatestReleaseVersion();
+                if (latestVersion != null)
+                {
+                    if (latestVersion > VersionDetection.GetCurrentVersion())
+                    {
+                        // there is a new version....
+                        _newVersionAvailable = true;
+                        RaisePropertyChanged(nameof(ShowNewVersionButton));
 
-                return true;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                Log.Logger.Warning("OnlyM cannot write to its database folder. Perhaps controlled folder access is enabled");
-                _snackbarService.EnqueueWithOk(Properties.Resources.ALLOW_DB_ACCESS, Properties.Resources.OK);
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Error(ex, "Checking controlled folder access");
-            }
-
-            return false;
-        }
-        
-        private bool CheckLogLevel()
-        {
-            switch (_optionsService.LogEventLevel)
-            {
-                case LogEventLevel.Debug:
-                case LogEventLevel.Verbose:
-                    _snackbarService.EnqueueWithOk(Properties.Resources.LOGGING_LEVEL_HIGH, Properties.Resources.OK);
-                    return false;
-            }
-
-            return true;
-        }
-
-        private bool CheckVersionData()
-        {
-            var latestVersion = VersionDetection.GetLatestReleaseVersion();
-            if (latestVersion != null && latestVersion > VersionDetection.GetCurrentVersion())
-            {
-                // there is a new version....
-                _newVersionAvailable = true;
-                RaisePropertyChanged(nameof(ShowNewVersionButton));
-
-                _snackbarService.Enqueue(
-                    Properties.Resources.NEW_UPDATE_AVAILABLE, 
-                    Properties.Resources.VIEW, 
-                    LaunchReleasePage);
-
-                return false;
-            }
-
-            return true;
+                        _snackbarService.Enqueue(
+                            Properties.Resources.NEW_UPDATE_AVAILABLE, 
+                            Properties.Resources.VIEW, 
+                            LaunchReleasePage);
+                    }
+                }
+            });
         }
 
         private void InitCommands()

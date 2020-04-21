@@ -8,20 +8,19 @@
     using System.Threading.Tasks;
     using System.Windows;
     using CommonServiceLocator;
-    using OnlyM.Core.Models;
+    using Core.Models;
+    using Core.Services.Options;
+    using MediaElementAdaption;
+    using Models;
     using OnlyM.Core.Services.Database;
     using OnlyM.Core.Services.Monitors;
-    using OnlyM.Core.Services.Options;
     using OnlyM.CoreSys.Services.Snackbar;
-    using OnlyM.CoreSys.WindowsPositioning;
-    using OnlyM.MediaElementAdaption;
-    using OnlyM.Models;
-    using OnlyM.Services;
-    using OnlyM.Services.Pages;
     using OnlyM.Services.WebBrowser;
     using OnlyM.Services.WebNavHeaderManager;
     using OnlyM.ViewModel;
     using Serilog;
+    using Services;
+    using Services.Pages;
     
     /// <summary>
     /// Interaction logic for MediaWindow.xaml
@@ -33,7 +32,7 @@
         private readonly ImageDisplayManager _imageDisplayManager;
         private readonly WebDisplayManager _webDisplayManager;
         private readonly AudioManager _audioManager;
-        
+
         private readonly WebNavHeaderAdmin _webNavHeaderAdmin;
 
         private readonly IOptionsService _optionsService;
@@ -81,8 +80,6 @@
         public event EventHandler<MediaNearEndEventArgs> MediaNearEndEvent;
 
         public event EventHandler<WebBrowserProgressEventArgs> WebStatusEvent;
-
-        public bool IsWindowed { get; set; }
 
         public void Dispose()
         {
@@ -183,7 +180,7 @@
                     break;
 
                 case MediaClassification.Web:
-                    StopWeb();
+                    StopWeb(mediaItem);
                     break;
             }
         }
@@ -208,35 +205,6 @@
         public int GotoNextSlide()
         {
             return _imageDisplayManager.GotoNextSlide();
-        }
-
-        public void SaveWindowPos()
-        {
-            if (IsWindowed)
-            {
-                _optionsService.MediaWindowPlacement = this.GetPlacement();
-                _optionsService.Save();
-            }
-        }
-
-        public void RestoreWindowPositionAndSize()
-        {
-            if (IsWindowed && !string.IsNullOrEmpty(_optionsService.MediaWindowPlacement))
-            {
-                this.SetPlacement(_optionsService.MediaWindowPlacement);
-            }
-        }
-
-        protected override void OnSourceInitialized(System.EventArgs e)
-        {
-            RestoreWindowPositionAndSize();
-            base.OnSourceInitialized(e);
-        }
-
-        protected override void OnClosing(CancelEventArgs e)
-        {
-            SaveWindowPos();
-            base.OnClosing(e);
         }
 
         private async Task PauseVideoOrAudioAsync(MediaItem mediaItem)
@@ -326,13 +294,9 @@
 
             var showMirrorWindow = mediaItem.UseMirror && mediaItem.AllowUseMirror;
 
-            int.TryParse(mediaItem.ChosenPdfPage, out var pdfStartingPage);
-
             _webDisplayManager.ShowWeb(
                 mediaItem.FilePath, 
                 mediaItem.Id,
-                pdfStartingPage,
-                mediaItem.ChosenPdfViewStyle,
                 showMirrorWindow,
                 _optionsService.WebScreenPosition);
 
@@ -342,9 +306,9 @@
             HideImageOrSlideshow(currentMediaItems);
         }
 
-        private void StopWeb()
+        private void StopWeb(MediaItem mediaItem)
         {
-            _webDisplayManager.HideWeb();
+            _webDisplayManager.HideWeb(mediaItem.FilePath);
         }
 
         private void StartSlideshow(MediaItem mediaItem)
@@ -511,6 +475,13 @@
             _videoDisplayManager.ShowSubtitles = _optionsService.ShowVideoSubtitles;
         }
 
+        private bool IsVideoOrAudio(MediaItem mediaItem)
+        {
+            return
+                mediaItem.MediaType.Classification == MediaClassification.Audio ||
+                mediaItem.MediaType.Classification == MediaClassification.Video;
+        }
+
         private bool ShouldConfirmMediaStop(MediaItem mediaItem)
         {
             switch (mediaItem.MediaType.Classification)
@@ -569,13 +540,11 @@
                 case RenderingMethod.Ffmpeg:
                     _videoElement = new MediaElementUnoSquare(VideoElementFfmpeg);
                     break;
-                    
+
+                default:
                 case RenderingMethod.MediaFoundation:
                     _videoElement = new MediaElementMediaFoundation(VideoElementMediaFoundation, _optionsService);
                     break;
-
-                default:
-                    throw new NotImplementedException();
             }
 
             _currentRenderingMethod = _optionsService.RenderingMethod;

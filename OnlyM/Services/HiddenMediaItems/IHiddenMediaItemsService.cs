@@ -2,7 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
-    using OnlyM.Models;
+    using Models;
 
     internal interface IHiddenMediaItemsService
     {

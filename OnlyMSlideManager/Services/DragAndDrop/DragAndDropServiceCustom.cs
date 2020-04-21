@@ -11,6 +11,7 @@
     using OnlyM.CoreSys.Services.UI;
     using OnlyMSlideManager.Models;
     using OnlyMSlideManager.PubSubMessages;
+    using Serilog;
 
     internal class DragAndDropServiceCustom : IDragAndDropServiceCustom
     {
@@ -19,7 +20,7 @@
             ".bmp",
             ".png",
             ".jpg",
-            ".jpeg",
+            ".jpeg"
         };
 
         private readonly IUserInterfaceService _userInterfaceService;
@@ -48,10 +49,13 @@
                 return;
             }
 
-            if (!_isDragging && (Math.Abs(position.X - _startDragPoint.X) > SystemParameters.MinimumHorizontalDragDistance ||
-                                 Math.Abs(position.Y - _startDragPoint.Y) > SystemParameters.MinimumVerticalDragDistance))
+            if (!_isDragging)
             {
-                StartDrag();
+                if (Math.Abs(position.X - _startDragPoint.X) > SystemParameters.MinimumHorizontalDragDistance ||
+                    Math.Abs(position.Y - _startDragPoint.Y) > SystemParameters.MinimumVerticalDragDistance)
+                {
+                    StartDrag(position);
+                }
             }
         }
 
@@ -76,7 +80,7 @@
                     Messenger.Default.Send(new ReorderMessage
                     {
                         SourceItem = sourceCardViewModel,
-                        TargetId = targetCardViewModel.DropZoneId,
+                        TargetId = targetCardViewModel.DropZoneId
                     });
                 }
                 else
@@ -98,11 +102,11 @@
             Messenger.Default.Send(new DropImagesMessage
             {
                 FileList = files,
-                TargetId = targetCardViewModel.DropZoneId,
+                TargetId = targetCardViewModel.DropZoneId
             });
         }
 
-        private void StartDrag()
+        private void StartDrag(Point position)
         {
             if (_dragSourceCard?.DataContext is SlideItem cardViewModel)
             {
@@ -111,7 +115,7 @@
 
                 var objectToDrag = new SourceCard
                 {
-                    Name = cardViewModel.Name,
+                    Name = cardViewModel.Name
                 };
 
                 var data = new DataObject(DataFormats.Serializable, objectToDrag);

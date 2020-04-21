@@ -1,22 +1,19 @@
 namespace OnlyM.ViewModel
 {
     using CommonServiceLocator;
+    using Core.Services.CommandLine;
+    using Core.Services.Database;
+    using Core.Services.Media;
+    using Core.Services.Monitors;
+    using Core.Services.Options;
     using GalaSoft.MvvmLight.Ioc;
-    using OnlyM.Core.Services.CommandLine;
-    using OnlyM.Core.Services.Database;
-    using OnlyM.Core.Services.Media;
-    using OnlyM.Core.Services.Monitors;
-    using OnlyM.Core.Services.Options;
     using OnlyM.CoreSys.Services.Snackbar;
-    using OnlyM.Services.Dialogs;
-    using OnlyM.Services.DragAndDrop;
-    using OnlyM.Services.FrozenVideoItems;
-    using OnlyM.Services.HiddenMediaItems;
-    using OnlyM.Services.MediaChanging;
-    using OnlyM.Services.Pages;
-    using OnlyM.Services.PdfOptions;
-    using OnlyM.Services.StartOffsetStorage;
-
+    using Services.DragAndDrop;
+    using Services.FrozenVideoItems;
+    using Services.HiddenMediaItems;
+    using Services.MediaChanging;
+    using Services.Pages;
+    
     /// <summary>
     /// This class contains static references to all the view models in the
     /// application and provides an entry point for the bindings.
@@ -42,15 +39,10 @@ namespace OnlyM.ViewModel
             SimpleIoc.Default.Register<IMediaStatusChangingService, MediaStatusChangingService>();
             SimpleIoc.Default.Register<IHiddenMediaItemsService, HiddenMediaItemsService>();
             SimpleIoc.Default.Register<IFrozenVideosService, FrozenVideosService>();
-            SimpleIoc.Default.Register<IPdfOptionsService, PdfOptionsService>();
             SimpleIoc.Default.Register<ICommandLineService, CommandLineService>();
             SimpleIoc.Default.Register<IActiveMediaItemsService, ActiveMediaItemsService>();
-            SimpleIoc.Default.Register<IDialogService, DialogService>();
-            SimpleIoc.Default.Register<IStartOffsetStorageService, StartOffsetStorageService>();
 
             // view models.
-            SimpleIoc.Default.Register<StartOffsetViewModel>();
-
             SimpleIoc.Default.Register<MainViewModel>();
             SimpleIoc.Default.Register<MediaViewModel>();
             SimpleIoc.Default.Register<OperatorViewModel>();
@@ -65,11 +57,8 @@ namespace OnlyM.ViewModel
 
         public SettingsViewModel Settings => ServiceLocator.Current.GetInstance<SettingsViewModel>();
 
-        public StartOffsetViewModel StartOffsetDialog => ServiceLocator.Current.GetInstance<StartOffsetViewModel>();
-
         public static void Cleanup()
         {
-            // not required
         }
     }
 }

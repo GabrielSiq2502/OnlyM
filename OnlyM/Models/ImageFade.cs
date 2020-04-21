@@ -1,6 +1,6 @@
 ﻿namespace OnlyM.Models
 {
-    using OnlyM.Core.Models;
+    using Core.Models;
 
     internal class ImageFade
     {

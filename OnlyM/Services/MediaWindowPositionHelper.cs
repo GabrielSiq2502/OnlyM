@@ -10,7 +10,6 @@
     using OnlyM.Core.Models;
     using OnlyM.Core.Services.CommandLine;
     using OnlyM.Core.Services.Options;
-    using OnlyM.Windows;
     using Serilog;
 
     /// <summary>
@@ -34,7 +33,7 @@
             (int dpiX, int dpiY) systemDpi, 
             bool isVideo)
         {
-            var area = monitor.Bounds;
+            var area = monitor.WorkingArea;
 
             var left = (area.Left * 96) / systemDpi.dpiX;
             var top = (area.Top * 96) / systemDpi.dpiY;
@@ -42,8 +41,6 @@
             var height = (area.Height * 96) / systemDpi.dpiY;
 
             Log.Logger.Verbose($"Monitor = {monitor.DeviceName} Left = {left}, top = {top}");
-
-            PrepareForFullScreenMonitorDisplay(mediaWindow);
 
             var mainGrid = GetMainGrid(mediaWindow);
             Debug.Assert(mainGrid != null || !isVideo, "mainGrid != null");
@@ -64,27 +61,6 @@
                     mainGrid.Margin = new Thickness(0);
                 }
             }
-        }
-
-        public static void PositionMediaWindowWindowed(MediaWindow mediaWindow)
-        {
-            mediaWindow.IsWindowed = true;
-            PrepareForWindowedDisplay(mediaWindow);
-            mediaWindow.RestoreWindowPositionAndSize();
-        }
-
-        private static void PrepareForFullScreenMonitorDisplay(Window mediaWindow)
-        {
-            mediaWindow.ResizeMode = ResizeMode.NoResize;
-            mediaWindow.ShowInTaskbar = false;
-            mediaWindow.WindowStyle = WindowStyle.None;
-        }
-
-        private static void PrepareForWindowedDisplay(Window mediaWindow)
-        {
-            mediaWindow.ResizeMode = ResizeMode.CanResize;
-            mediaWindow.ShowInTaskbar = true;
-            mediaWindow.WindowStyle = WindowStyle.SingleBorderWindow;
         }
 
         private static Grid GetMainGrid(Window mediaWindow)

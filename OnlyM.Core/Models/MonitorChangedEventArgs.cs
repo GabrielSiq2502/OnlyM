@@ -4,6 +4,8 @@
 
     public class MonitorChangedEventArgs : EventArgs
     {
-        public MonitorChangeDescription Change { get; set; }
+        public string OriginalMonitorId { get; set; }
+
+        public string NewMonitorId { get; set; }
     }
 }

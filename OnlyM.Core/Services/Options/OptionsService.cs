@@ -8,14 +8,14 @@
     using System.Threading;
     using System.Windows;
     using System.Windows.Markup;
+    using CommandLine;
     using CommonServiceLocator;
+    using Models;
+    using Monitors;
     using Newtonsoft.Json;
-    using OnlyM.Core.Models;
-    using OnlyM.Core.Services.CommandLine;
-    using OnlyM.Core.Services.Monitors;
-    using OnlyM.Core.Utils;
     using Serilog;
     using Serilog.Events;
+    using Utils;
 
     // ReSharper disable once ClassNeverInstantiated.Global
     public sealed class OptionsService : IOptionsService
@@ -100,18 +100,6 @@
                 if (_options.Value.AppWindowPlacement != value)
                 {
                     _options.Value.AppWindowPlacement = value;
-                }
-            }
-        }
-
-        public string MediaWindowPlacement
-        {
-            get => _options.Value.MediaWindowPlacement;
-            set
-            {
-                if (_options.Value.MediaWindowPlacement != value)
-                {
-                    _options.Value.MediaWindowPlacement = value;
                 }
             }
         }
@@ -433,24 +421,9 @@
             {
                 if (_options.Value.MediaMonitorId != value)
                 {
-                    var original = _options.Value.MediaMonitorId;
+                    var originalMonitorId = _options.Value.MediaMonitorId;
                     _options.Value.MediaMonitorId = value;
-
-                    OnMediaMonitorChangedEvent(GetChange(original, value));
-                }
-            }
-        }
-
-        public bool MediaWindowed
-        {
-            get => _options.Value.MediaWindowed;
-            set
-            {
-                if (_options.Value.MediaWindowed != value)
-                {
-                    _options.Value.MediaWindowed = value;
-
-                    OnMediaMonitorChangedEvent(GetChange(value, MediaMonitorId));
+                    OnMediaMonitorChangedEvent(originalMonitorId, value);
                 }
             }
         }
@@ -660,9 +633,15 @@
             return JsonConvert.SerializeObject(options);
         }
 
-        private void OnMediaMonitorChangedEvent(MonitorChangeDescription change)
+        private void OnMediaMonitorChangedEvent(string originalMonitorId, string newMonitorId)
         {
-            MediaMonitorChangedEvent?.Invoke(this, new MonitorChangedEventArgs { Change = change });
+            MediaMonitorChangedEvent?.Invoke(
+                this,
+                new MonitorChangedEventArgs
+                {
+                    OriginalMonitorId = originalMonitorId,
+                    NewMonitorId = newMonitorId
+                });
         }
 
         private Options OptionsFactory()
@@ -769,35 +748,6 @@
                     _originalOptionsSignature = GetOptionsSignature(options);
                 }
             }
-        }
-
-        private MonitorChangeDescription GetChange(string originalMonitor, string newMonitor)
-        {
-            if (string.IsNullOrEmpty(originalMonitor))
-            {
-                return MonitorChangeDescription.NoneToMonitor;
-            }
-
-            if (string.IsNullOrEmpty(newMonitor))
-            {
-                return MonitorChangeDescription.MonitorToNone;
-            }
-
-            return MonitorChangeDescription.MonitorToMonitor;
-        }
-
-        private MonitorChangeDescription GetChange(bool newWindowedSetting, string monitorId)
-        {
-            if (newWindowedSetting)
-            {
-                return string.IsNullOrEmpty(monitorId) 
-                    ? MonitorChangeDescription.NoneToWindow 
-                    : MonitorChangeDescription.MonitorToWindow;
-            }
-
-            return string.IsNullOrEmpty(monitorId)
-                ? MonitorChangeDescription.WindowToNone
-                : MonitorChangeDescription.WindowToMonitor;
         }
     }
 }

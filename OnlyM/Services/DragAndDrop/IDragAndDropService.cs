@@ -2,7 +2,7 @@
 {
     using System;
     using System.Windows;
-    using OnlyM.Models;
+    using Models;
 
     internal interface IDragAndDropService
     {

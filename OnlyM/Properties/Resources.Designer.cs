@@ -19,7 +19,7 @@ namespace OnlyM.Properties {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class Resources {
@@ -66,15 +66,6 @@ namespace OnlyM.Properties {
         public static string ACTIVE_ITEM_DELETED {
             get {
                 return ResourceManager.GetString("ACTIVE_ITEM_DELETED", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Access to the OnlyM database is required!.
-        /// </summary>
-        public static string ALLOW_DB_ACCESS {
-            get {
-                return ResourceManager.GetString("ALLOW_DB_ACCESS", resourceCulture);
             }
         }
         
@@ -179,15 +170,6 @@ namespace OnlyM.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to CLEAR.
-        /// </summary>
-        public static string CLEAR_RECENTS {
-            get {
-                return ResourceManager.GetString("CLEAR_RECENTS", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Confirm when stopping.
         /// </summary>
         public static string CONFIRM_STOP {
@@ -274,24 +256,6 @@ namespace OnlyM.Properties {
         public static string DISPLAY_HELP {
             get {
                 return ResourceManager.GetString("DISPLAY_HELP", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to CANCEL.
-        /// </summary>
-        public static string DLG_CANCEL {
-            get {
-                return ResourceManager.GetString("DLG_CANCEL", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to OK.
-        /// </summary>
-        public static string DLG_OK {
-            get {
-                return ResourceManager.GetString("DLG_OK", resourceCulture);
             }
         }
         
@@ -386,15 +350,6 @@ namespace OnlyM.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Hours.
-        /// </summary>
-        public static string HOURS {
-            get {
-                return ResourceManager.GetString("HOURS", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Image Margins.
         /// </summary>
         public static string IMAGE_MARGINS {
@@ -413,7 +368,7 @@ namespace OnlyM.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to JW Library® compatibility mode.
+        ///   Looks up a localized string similar to JW Library compatibility mode.
         /// </summary>
         public static string JW_COMPAT_MODE {
             get {
@@ -539,24 +494,6 @@ namespace OnlyM.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Windowed.
-        /// </summary>
-        public static string MEDIA_WINDOWED {
-            get {
-                return ResourceManager.GetString("MEDIA_WINDOWED", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Minutes.
-        /// </summary>
-        public static string MINUTES {
-            get {
-                return ResourceManager.GetString("MINUTES", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Mirror.
         /// </summary>
         public static string MIRROR {
@@ -629,15 +566,6 @@ namespace OnlyM.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cannot deselect windowed mode when media is active.
-        /// </summary>
-        public static string NO_DESELECT_WINDOWED {
-            get {
-                return ResourceManager.GetString("NO_DESELECT_WINDOWED", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to No supported media files!.
         /// </summary>
         public static string NO_SUPPORTED_FILES {
@@ -670,51 +598,6 @@ namespace OnlyM.Properties {
         public static string PAUSE_FINAL_FRAME {
             get {
                 return ResourceManager.GetString("PAUSE_FINAL_FRAME", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Starting page.
-        /// </summary>
-        public static string PDF_PAGENUM {
-            get {
-                return ResourceManager.GetString("PDF_PAGENUM", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to View.
-        /// </summary>
-        public static string PDF_VIEW {
-            get {
-                return ResourceManager.GetString("PDF_VIEW", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Default.
-        /// </summary>
-        public static string PDF_VIEW_STYLE_DEFAULT {
-            get {
-                return ResourceManager.GetString("PDF_VIEW_STYLE_DEFAULT", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Horizontal fit.
-        /// </summary>
-        public static string PDF_VIEW_STYLE_HORZ {
-            get {
-                return ResourceManager.GetString("PDF_VIEW_STYLE_HORZ", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Vertical fit.
-        /// </summary>
-        public static string PDF_VIEW_STYLE_VERT {
-            get {
-                return ResourceManager.GetString("PDF_VIEW_STYLE_VERT", resourceCulture);
             }
         }
         
@@ -755,15 +638,6 @@ namespace OnlyM.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Recent.
-        /// </summary>
-        public static string RECENT_TIMES {
-            get {
-                return ResourceManager.GetString("RECENT_TIMES", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Rendering engine.
         /// </summary>
         public static string RENDERING_ENGINE {
@@ -787,15 +661,6 @@ namespace OnlyM.Properties {
         public static string ROLLING_SLIDE_X_OF_Y {
             get {
                 return ResourceManager.GetString("ROLLING_SLIDE_X_OF_Y", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Seconds.
-        /// </summary>
-        public static string SECONDS {
-            get {
-                return ResourceManager.GetString("SECONDS", resourceCulture);
             }
         }
         
@@ -863,15 +728,6 @@ namespace OnlyM.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Media Start.
-        /// </summary>
-        public static string SET_MEDIA_START {
-            get {
-                return ResourceManager.GetString("SET_MEDIA_START", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Settings.
         /// </summary>
         public static string SETTINGS {
@@ -895,15 +751,6 @@ namespace OnlyM.Properties {
         public static string SHOW_FREEZE {
             get {
                 return ResourceManager.GetString("SHOW_FREEZE", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Adjust start time.
-        /// </summary>
-        public static string SHOW_START_OFFSET_DLG {
-            get {
-                return ResourceManager.GetString("SHOW_START_OFFSET_DLG", resourceCulture);
             }
         }
         

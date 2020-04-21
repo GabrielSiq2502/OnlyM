@@ -3,7 +3,7 @@
     using System;
     using System.Collections.Concurrent;
     using System.Linq;
-    using OnlyM.Models;
+    using Models;
     using Serilog;
 
     internal sealed class MetaDataQueueProducer : IDisposable

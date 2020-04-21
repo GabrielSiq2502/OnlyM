@@ -1,7 +1,7 @@
 ﻿namespace OnlyM.Services.MetaDataQueue
 {
     using System;
-    using OnlyM.Models;
+    using Models;
 
     internal class ItemMetaDataPopulatedEventArgs : EventArgs
     {
