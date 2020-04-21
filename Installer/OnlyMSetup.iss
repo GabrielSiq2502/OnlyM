@@ -7,6 +7,7 @@
 #define MyAppExeName "OnlyM.exe"
 #define MySource "d:\ProjectsPersonal\OnlyM\OnlyM"
 #define SlideManagerAppExeName "OnlyMSlideManager.exe"
+#define SlideManagerAppName "OnlyM Slide Manager"
 
 #define MyAppVersion GetFileVersion(MySource + '\bin\x86\Release\OnlyM.exe');
 
@@ -76,7 +77,7 @@ Source: "bin\x86\Release\OnlyM.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "bin\x86\Release\OnlyM.exe.config"; DestDir: "{app}"; Flags: ignoreversion
 Source: "bin\x86\Release\OnlyM.Slides.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "bin\x86\Release\OnlyMMirror.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "bin\x86\Release\policy.2.0.taglib-sharp.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "bin\x86\Release\TagLibSharp.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "bin\x86\Release\Serilog.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "bin\x86\Release\Serilog.Sinks.Console.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "bin\x86\Release\Serilog.Sinks.File.dll"; DestDir: "{app}"; Flags: ignoreversion
@@ -84,7 +85,6 @@ Source: "bin\x86\Release\Serilog.Sinks.RollingFile.dll"; DestDir: "{app}"; Flags
 Source: "bin\x86\Release\System.Data.SQLite.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "bin\x86\Release\System.ValueTuple.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "bin\x86\Release\System.Windows.Interactivity.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "bin\x86\Release\taglib-sharp.dll"; DestDir: "{app}"; Flags: ignoreversion
 
 ; Slide manager
 Source: "..\OnlyMSlideManager\bin\Release\OnlyMSlideManager.exe"; DestDir: "{app}"; Flags: ignoreversion
@@ -105,6 +105,7 @@ Source: "bin\x86\Release\hr-HR\*.dll"; DestDir: "{app}\hr-HR"; Flags: ignorevers
 Source: "bin\x86\Release\hu-HU\*.dll"; DestDir: "{app}\hu-HU"; Flags: ignoreversion
 Source: "bin\x86\Release\it-IT\*.dll"; DestDir: "{app}\it-IT"; Flags: ignoreversion
 Source: "bin\x86\Release\ka-GE\*.dll"; DestDir: "{app}\ka-GE"; Flags: ignoreversion
+Source: "bin\x86\Release\lv-LV\*.dll"; DestDir: "{app}\lv-LV"; Flags: ignoreversion
 Source: "bin\x86\Release\nl-NL\*.dll"; DestDir: "{app}\nl-NL"; Flags: ignoreversion
 Source: "bin\x86\Release\no\*.dll"; DestDir: "{app}\no"; Flags: ignoreversion
 ; don't include this - Source: "bin\x86\Release\no-NO\*.dll"; DestDir: "{app}\no"; Flags: ignoreversion
@@ -118,6 +119,7 @@ Source: "bin\x86\Release\ru-RU\*.dll"; DestDir: "{app}\ru-RU"; Flags: ignorevers
 Source: "bin\x86\Release\sk-SK\*.dll"; DestDir: "{app}\sk-SK"; Flags: ignoreversion
 Source: "bin\x86\Release\sv-SE\*.dll"; DestDir: "{app}\sv-SE"; Flags: ignoreversion
 Source: "bin\x86\Release\tr-TR\*.dll"; DestDir: "{app}\tr-TR"; Flags: ignoreversion
+Source: "bin\x86\Release\vi-VN\*.dll"; DestDir: "{app}\vi-VN"; Flags: ignoreversion
 
 ; SlideManager localisation
 Source: "..\OnlyMSlideManager\bin\Release\bg-BG\*.dll"; DestDir: "{app}\bg-BG"; Flags: ignoreversion
@@ -134,6 +136,7 @@ Source: "..\OnlyMSlideManager\bin\Release\hr-HR\*.dll"; DestDir: "{app}\hr-HR"; 
 Source: "..\OnlyMSlideManager\bin\Release\hu-HU\*.dll"; DestDir: "{app}\hu-HU"; Flags: ignoreversion
 Source: "..\OnlyMSlideManager\bin\Release\it-IT\*.dll"; DestDir: "{app}\it-IT"; Flags: ignoreversion
 Source: "..\OnlyMSlideManager\bin\Release\ka-GE\*.dll"; DestDir: "{app}\ka-GE"; Flags: ignoreversion
+Source: "..\OnlyMSlideManager\bin\Release\lv-LV\*.dll"; DestDir: "{app}\lv-LV"; Flags: ignoreversion
 Source: "..\OnlyMSlideManager\bin\Release\nl-NL\*.dll"; DestDir: "{app}\nl-NL"; Flags: ignoreversion
 Source: "..\OnlyMSlideManager\bin\Release\no\*.dll"; DestDir: "{app}\no"; Flags: ignoreversion
 ; don't include this - Source: "bin\Release\no-NO\*.dll"; DestDir: "{app}\no"; Flags: ignoreversion
@@ -147,6 +150,7 @@ Source: "..\OnlyMSlideManager\bin\Release\ru-RU\*.dll"; DestDir: "{app}\ru-RU"; 
 Source: "..\OnlyMSlideManager\bin\Release\sk-SK\*.dll"; DestDir: "{app}\sk-SK"; Flags: ignoreversion
 Source: "..\OnlyMSlideManager\bin\Release\sv-SE\*.dll"; DestDir: "{app}\sv-SE"; Flags: ignoreversion
 Source: "..\OnlyMSlideManager\bin\Release\tr-TR\*.dll"; DestDir: "{app}\tr-TR"; Flags: ignoreversion
+Source: "..\OnlyMSlideManager\bin\Release\vi-VN\*.dll"; DestDir: "{app}\vi-VN"; Flags: ignoreversion
 
 ; CefSharp files...
 Source: "bin\x86\Release\locales\*"; DestDir: "{app}\locales"; Flags: ignoreversion
@@ -174,11 +178,17 @@ Source: "..\UrlLinkFiles\JW Broadcasting.url"; DestDir: "{commonappdata}\OnlyM\W
 Source: "..\UrlLinkFiles\JW.org website.url"; DestDir: "{commonappdata}\OnlyM\Websites"
 Source: "..\UrlLinkFiles\Watchtower online library.url"; DestDir: "{commonappdata}\OnlyM\Websites"
 
+
+; remove legacy shortcuts (wrongly named SlideManagerAppExeName instead of SlideManagerAppName)
+[InstallDelete]
+Type: files; Name: "{group}\{#SlideManagerAppExeName}.lnk"
+Type: files; Name: "{commondesktop}\{#SlideManagerAppExeName}.lnk"
+
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
-Name: "{group}\{#SlideManagerAppExeName}"; Filename: "{app}\{#SlideManagerAppExeName}"
+Name: "{group}\{#SlideManagerAppName}"; Filename: "{app}\{#SlideManagerAppExeName}"
 Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
-Name: "{commondesktop}\{#SlideManagerAppExeName}"; Filename: "{app}\{#SlideManagerAppExeName}"; Tasks: desktopicon
+Name: "{commondesktop}\{#SlideManagerAppName}"; Filename: "{app}\{#SlideManagerAppExeName}"; Tasks: desktopicon
 
 [ThirdParty]
 UseRelativePaths=True

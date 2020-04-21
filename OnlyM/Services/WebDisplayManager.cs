@@ -61,6 +61,8 @@
         public void ShowWeb(
             string mediaItemFilePath,
             Guid mediaItemId,
+            int pdfStartingPage,
+            PdfViewStyle pdfViewStyle,
             bool showMirror,
             ScreenPosition screenPosition)
         {
@@ -81,7 +83,12 @@
             string webAddress;
             if (Path.GetExtension(mediaItemFilePath).Equals(".pdf", StringComparison.OrdinalIgnoreCase))
             {
-                webAddress = $"pdf://{mediaItemFilePath}";
+                // https://www.adobe.com/content/dam/acom/en/devnet/acrobat/pdfs/pdf_open_parameters.pdf
+
+                var viewString = GetPdfViewString(pdfViewStyle);
+                var cacheBusterString = DateTime.Now.Ticks.ToString();
+
+                webAddress = $"pdf://{mediaItemFilePath}?t={cacheBusterString}#view={viewString}&page={pdfStartingPage}";
             }
             else
             {
@@ -92,13 +99,13 @@
             _currentMediaItemUrl = webAddress;
 
             RemoveAnimation();
-
+            
             _browserGrid.Visibility = Visibility.Visible;
 
             _browser.Load(webAddress);
         }
 
-        public void HideWeb(string mediaItemFilePath)
+        public void HideWeb()
         {
             OnMediaChangeEvent(CreateMediaEventArgs(_mediaItemId, MediaChange.Stopping));
 
@@ -184,9 +191,9 @@
                     StartInfo =
                     {
                         FileName = mirrorExePath,
-                        Arguments = commandLineArgs
+                        Arguments = commandLineArgs,
                     },
-                    EnableRaisingEvents = true
+                    EnableRaisingEvents = true,
                 };
 
                 _mirrorProcess.Exited += HandleMirrorProcessExited;
@@ -283,7 +290,7 @@
             {
                 MediaItemId = id,
                 Classification = MediaClassification.Web,
-                Change = change
+                Change = change,
             };
         }
 
@@ -298,7 +305,7 @@
             {
                 StatusEvent?.Invoke(this, new WebBrowserProgressEventArgs
                 {
-                    Description = Properties.Resources.WEB_LOADING
+                    Description = Properties.Resources.WEB_LOADING,
                 });
             }
             else
@@ -310,25 +317,22 @@
             {
                 Log.Debug(e.IsLoading ? $"Loading web page = {_browser.Address}" : "Loaded web page");
 
-                if (!e.IsLoading)
+                if (!e.IsLoading && !_showing)
                 {
-                    if (!_showing)
+                    // page is loaded so fade in...
+                    _showing = true;
+                    await InitBrowserFromDatabase(_currentMediaItemUrl);
+
+                    FadeBrowser(true, () =>
                     {
-                        // page is loaded so fade in...
-                        _showing = true;
-                        await InitBrowserFromDatabase(_currentMediaItemUrl);
+                        OnMediaChangeEvent(CreateMediaEventArgs(_mediaItemId, MediaChange.Started));
+                        _browserGrid.Focus();
 
-                        FadeBrowser(true, () =>
+                        if (_useMirror)
                         {
-                            OnMediaChangeEvent(CreateMediaEventArgs(_mediaItemId, MediaChange.Started));
-                            _browserGrid.Focus();
-
-                            if (_useMirror)
-                            {
-                                ShowMirror();
-                            }
-                        });
-                    }
+                            ShowMirror();
+                        }
+                    });
                 }
             });
         }
@@ -347,7 +351,7 @@
             {
                 Duration = TimeSpan.FromSeconds(fadeTimeSecs * 1.2),
                 From = fadeIn ? 0.0 : 1.0,
-                To = fadeIn ? 1.0 : 0.0
+                To = fadeIn ? 1.0 : 0.0,
             };
 
             if (completed != null)
@@ -416,6 +420,21 @@
                 {
                     _snackbarService.EnqueueWithOk(Properties.Resources.CHANGE_MIRROR_HOTKEY, Properties.Resources.OK);
                 }
+            }
+        }
+
+        private string GetPdfViewString(PdfViewStyle pdfViewStyle)
+        {
+            switch (pdfViewStyle)
+            {
+                case PdfViewStyle.HorizontalFit:
+                    return "FitH";
+                case PdfViewStyle.VerticalFit:
+                    return "FitV";
+
+                default:
+                case PdfViewStyle.Default:
+                    return string.Empty;
             }
         }
     }

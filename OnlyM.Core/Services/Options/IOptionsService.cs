@@ -2,7 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
-    using Models;
+    using OnlyM.Core.Models;
     using Serilog.Events;
 
     public interface IOptionsService
@@ -57,6 +57,8 @@
 
         string AppWindowPlacement { get; set; }
 
+        string MediaWindowPlacement { get; set; }
+
         List<string> RecentlyUsedMediaFolders { get; set; }
 
         string Culture { get; set; }
@@ -100,6 +102,8 @@
         RenderingMethod RenderingMethod { get; set; }
 
         string MediaMonitorId { get; set; }
+
+        bool MediaWindowed { get; set; }
 
         double BrowserZoomLevelIncrement { get; set; }
         

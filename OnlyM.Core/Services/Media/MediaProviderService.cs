@@ -4,9 +4,10 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
-    using Models;
+    using OnlyM.Core.Models;
+    using OnlyM.Core.Services.Options;
     using OnlyM.Slides;
-    using Options;
+    using Serilog;
 
     // ReSharper disable once ClassNeverInstantiated.Global
     public class MediaProviderService : IMediaProviderService
@@ -30,17 +31,20 @@
             new SupportedMediaType { Name = "GIF Image", Classification = MediaClassification.Image, FileExtension = ".gif" },
             new SupportedMediaType { Name = "ICO Image", Classification = MediaClassification.Image, FileExtension = ".ico" },
             new SupportedMediaType { Name = "TIFF Image", Classification = MediaClassification.Image, FileExtension = ".tiff" },
-            
+            new SupportedMediaType { Name = "JFIFF Image", Classification = MediaClassification.Image, FileExtension = ".jfif" },
+
             new SupportedMediaType { Name = "MP3 Audio", Classification = MediaClassification.Audio, FileExtension = ".mp3" },
             new SupportedMediaType { Name = "M4A Audio", Classification = MediaClassification.Audio, FileExtension = ".m4a" },
             new SupportedMediaType { Name = "WMA Audio", Classification = MediaClassification.Audio, FileExtension = ".wma" },
             new SupportedMediaType { Name = "WMP Audio", Classification = MediaClassification.Audio, FileExtension = ".wmp" },
             new SupportedMediaType { Name = "WAV Audio", Classification = MediaClassification.Audio, FileExtension = ".wav" },
+            new SupportedMediaType { Name = "IAF Audio", Classification = MediaClassification.Audio, FileExtension = ".aif" },
+            new SupportedMediaType { Name = "IAFF Audio", Classification = MediaClassification.Audio, FileExtension = ".aiff" },
 
             new SupportedMediaType { Name = "OnlyM Slideshow", Classification = MediaClassification.Slideshow, FileExtension = SlideFile.FileExtension },
 
             new SupportedMediaType { Name = "Web Page", Classification = MediaClassification.Web, FileExtension = ".url" },
-            new SupportedMediaType { Name = "PDF file", Classification = MediaClassification.Web, FileExtension = ".pdf" }
+            new SupportedMediaType { Name = "PDF file", Classification = MediaClassification.Web, FileExtension = ".pdf" },
         };
 
         private readonly HashSet<string> _supportedFileExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -107,8 +111,32 @@
             }
 
             var extension = Path.GetExtension(fileName);
-            return _supportedMediaTypes.SingleOrDefault(x =>
+
+            var result = _supportedMediaTypes.SingleOrDefault(x =>
                 x.FileExtension.Equals(extension, StringComparison.OrdinalIgnoreCase));
+
+            if (result != null && 
+                result.Classification == MediaClassification.Web &&
+                IsPdf(fileName) &&
+                fileName.Contains("#"))
+            {
+                // the CefBrowser doesn't support files with '#' character in path!
+                // work-around this by logging and saying unsupported...
+                Log.Logger.Warning($"'{fileName}' - web files with embedded # character not supported - rename the file!");
+                return null;
+            }
+
+            return result;
+        }
+
+        private bool IsPdf(string fileName)
+        {
+            if (string.IsNullOrEmpty(fileName))
+            {
+                return false;
+            }
+
+            return Path.GetExtension(fileName).Equals(".pdf", StringComparison.OrdinalIgnoreCase);
         }
 
         private IReadOnlyCollection<MediaFile> GetMediaFilesInFolder(string folder)
@@ -132,7 +160,7 @@
                     {
                         FullPath = file,
                         MediaType = mediaType,
-                        LastChanged = lastChanged.Ticks
+                        LastChanged = lastChanged.Ticks,
                     });
                 }
             }

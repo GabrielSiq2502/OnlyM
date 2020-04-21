@@ -1,5 +1,3 @@
-using System.Threading;
-
 namespace OnlyMSlideManager.ViewModel
 {
     using System;
@@ -75,6 +73,9 @@ namespace OnlyMSlideManager.ViewModel
             _languages = GetSupportedLanguages();
 
             AddDesignTimeItems();
+
+            // init options so that UI locale is set
+            var dummy = _optionsService.Culture;
 
             InitCommands();
             Messenger.Default.Register<ReorderMessage>(this, OnReorderMessage);
@@ -628,7 +629,7 @@ namespace OnlyMSlideManager.ViewModel
                     ? (int?)null
                     : slide.DwellTimeMilliseconds / 1000,
                 DropZoneId = Guid.NewGuid().ToString(),
-                SlideIndex = slideIndex
+                SlideIndex = slideIndex,
             };
 
             newSlide.SlideItemModifiedEvent += HandleSlideItemModifiedEvent;
@@ -667,7 +668,7 @@ namespace OnlyMSlideManager.ViewModel
         {
             SlideItems.Add(new SlideItem
             {
-                IsEndMarker = true
+                IsEndMarker = true,
             });
         }
 
@@ -675,14 +676,15 @@ namespace OnlyMSlideManager.ViewModel
         {
             if (IsDirty)
             {
-                var result = await _dialogService.ShouldSaveDirtyDataAsync().ConfigureAwait(true);
-                if (result == true)
+                bool? result = await _dialogService.ShouldSaveDirtyDataAsync().ConfigureAwait(true);
+                switch (result)
                 {
-                    await SaveFile();
-                }
-                else if (result == null)
-                {
-                    return;
+                    case true:
+                        await SaveFile();
+                        break;
+
+                    case null:
+                        return;
                 }
             }
 
@@ -715,6 +717,17 @@ namespace OnlyMSlideManager.ViewModel
 
         private async Task InitNewSlideshowInternal(string optionalPathToExistingSlideshow)
         {
+            using (new ObservableCollectionSuppression<SlideItem>(SlideItems))
+            {
+                SlideItems.Clear();
+            }
+
+            RaisePropertyChanged(nameof(HasSlides));
+            RaisePropertyChanged(nameof(HasNoSlides));
+            RaisePropertyChanged(nameof(IsDirty));
+
+            StatusText = GetStandardStatusText();
+
             var builder = new SlideFileBuilder(MaxImageWidth, MaxImageHeight);
             if (!string.IsNullOrEmpty(optionalPathToExistingSlideshow))
             {
@@ -955,7 +968,7 @@ namespace OnlyMSlideManager.ViewModel
                         result.Add(new LanguageItem
                         {
                             LanguageId = c.Name,
-                            LanguageName = c.EnglishName
+                            LanguageName = c.EnglishName,
                         });
                     }
                     catch (CultureNotFoundException)
@@ -971,7 +984,7 @@ namespace OnlyMSlideManager.ViewModel
                 result.Add(new LanguageItem
                 {
                     LanguageId = c.Name,
-                    LanguageName = c.EnglishName
+                    LanguageName = c.EnglishName,
                 });
             }
 

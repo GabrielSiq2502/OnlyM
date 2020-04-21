@@ -147,8 +147,13 @@
                           materialDesign:HintAssist.Hint="{x:Static resx:Resources.MEDIA_MONITOR}"
                           SelectedValuePath="MonitorId" 
                           DisplayMemberPath="FriendlyName"
+                          IsEnabled="{Binding CanChangeMonitor}"
                           SelectedValue="{Binding MonitorId, Mode=TwoWay}">
                 </ComboBox>
+
+                <CheckBox IsChecked="{Binding MediaWindowed, Mode=TwoWay}"
+                          Content="{x:Static resx:Resources.MEDIA_WINDOWED}"
+                          Style="{StaticResource SettingsCheckBoxStyle}"/>
 
                 <CheckBox IsChecked="{Binding PermanentBackdrop, Mode=TwoWay}"
                           IsEnabled="{Binding JwLibModeNotSet, Mode=OneWay}"

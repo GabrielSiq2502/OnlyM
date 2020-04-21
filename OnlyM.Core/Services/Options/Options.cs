@@ -4,10 +4,10 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
-    using Models;
     using Newtonsoft.Json;
+    using OnlyM.Core.Models;
+    using OnlyM.Core.Utils;
     using Serilog.Events;
-    using Utils;
 
     public sealed class Options
     {
@@ -67,6 +67,8 @@
 
         public string MediaMonitorId { get; set; }
 
+        public bool MediaWindowed { get; set; }
+
         public RenderingMethod RenderingMethod { get; set; }
         
         [JsonIgnore]
@@ -97,6 +99,8 @@
         public bool AlwaysOnTop { get; set; }
         
         public string AppWindowPlacement { get; set; }
+
+        public string MediaWindowPlacement { get; set; }
 
         public bool JwLibraryCompatibilityMode { get; set; }
 

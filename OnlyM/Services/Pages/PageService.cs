@@ -7,22 +7,22 @@
     using System.Windows;
     using System.Windows.Controls;
     using System.Windows.Forms;
-    using Core.Models;
-    using Core.Services.Monitors;
-    using Core.Services.Options;
     using GalaSoft.MvvmLight.Messaging;
     using GalaSoft.MvvmLight.Threading;
-    using MediaChanging;
-    using MediaElementAdaption;
-    using Models;
+    using OnlyM.Core.Models;
     using OnlyM.Core.Services.CommandLine;
     using OnlyM.Core.Services.Database;
+    using OnlyM.Core.Services.Monitors;
+    using OnlyM.Core.Services.Options;
     using OnlyM.CoreSys.Services.Snackbar;
     using OnlyM.CoreSys.WindowsPositioning;
+    using OnlyM.MediaElementAdaption;
+    using OnlyM.Models;
+    using OnlyM.PubSubMessages;
+    using OnlyM.Services.MediaChanging;
     using OnlyM.Services.WebBrowser;
-    using PubSubMessages;
+    using OnlyM.Windows;
     using Serilog;
-    using Windows;
     
     // ReSharper disable once ClassNeverInstantiated.Global
     internal sealed class PageService : IPageService
@@ -67,7 +67,7 @@
             Messenger.Default.Register<MirrorWindowMessage>(this, OnMirrorWindowMessage);
         }
 
-        public event EventHandler MediaMonitorChangedEvent;
+        public event EventHandler<MonitorChangedEventArgs> MediaMonitorChangedEvent;
 
         public event EventHandler<NavigationEventArgs> NavigationEvent;
 
@@ -118,9 +118,7 @@
 
         public void GotoSettingsPage()
         {
-#pragma warning disable SA1312 // Variable names must begin with lower-case letter
             var _ = _settingsPage.Value;   // ensure created otherwise doesn't receive navigation event
-#pragma warning restore SA1312 // Variable names must begin with lower-case letter
 
             _operatorPageScrollerPosition = ScrollViewer.VerticalOffset;
             OnNavigationEvent(new NavigationEventArgs { PageName = SettingsPageName });
@@ -207,10 +205,23 @@
             }
         }
 
-        private void PositionMediaWindow(Window window, Screen monitor, bool isVideo)
+        private void PositionMediaWindowWindowed()
+        {
+            if (!_mediaWindow.IsWindowed)
+            {
+                MediaWindowPositionHelper.PositionMediaWindowWindowed(_mediaWindow);
+                _mediaWindow.Show();
+            }
+        }
+
+        private void PositionMediaWindowFullScreenMonitor(Screen monitor, bool isVideo)
         {
             MediaWindowPositionHelper.PositionMediaWindow(
-                _optionsService, _commandLineService, window, monitor, _systemDpi, isVideo);
+                _optionsService, _commandLineService, _mediaWindow, monitor, _systemDpi, isVideo);
+
+            _mediaWindow.Topmost = true;
+
+            _mediaWindow.Show();
         }
 
         private void OnNavigationEvent(NavigationEventArgs e)
@@ -236,28 +247,42 @@
             ApplicationIsClosing = true;
             CloseMediaWindow();
         }
-        
+
         private void RelocateMediaWindow()
         {
             if (_mediaWindow != null)
             {
-                var isVisible = _mediaWindow.IsVisible;
+                var isOriginallyVisible = _mediaWindow.IsVisible || _optionsService.PermanentBackdrop;
 
-                var targetMonitor = _monitorsService.GetSystemMonitor(_optionsService.MediaMonitorId);
-                if (targetMonitor != null)
+                if (_optionsService.MediaWindowed)
                 {
                     _mediaWindow.Hide();
                     _mediaWindow.WindowState = WindowState.Normal;
 
-                    PositionMediaWindow(_mediaWindow, targetMonitor.Monitor, false);
+                    PositionMediaWindowWindowed();
 
-                    _mediaWindow.Topmost = true;
-
-                    _mediaWindow.Show();
-                    
-                    if (!isVisible)
+                    if (!isOriginallyVisible)
                     {
                         _mediaWindow.Hide();
+                    }
+                }
+                else
+                {
+                    var targetMonitor = _monitorsService.GetSystemMonitor(_optionsService.MediaMonitorId);
+                    if (targetMonitor != null)
+                    {
+                        _mediaWindow.SaveWindowPos();
+                        _mediaWindow.IsWindowed = false;
+
+                        _mediaWindow.Hide();
+                        _mediaWindow.WindowState = WindowState.Normal;
+
+                        PositionMediaWindowFullScreenMonitor(targetMonitor.Monitor, false);
+
+                        if (!isOriginallyVisible)
+                        {
+                            _mediaWindow.Hide();
+                        }
                     }
                 }
             }
@@ -367,24 +392,30 @@
 
         private void HandleMediaMonitorChangedEvent(object sender, MonitorChangedEventArgs e)
         {
-            UpdateMediaMonitor();
+            UpdateMediaMonitor(e.Change);
         }
 
-        private void UpdateMediaMonitor()
+        private void UpdateMediaMonitor(MonitorChangeDescription change)
         {
             try
             {
-                if (_optionsService.IsMediaMonitorSpecified)
+                switch (change)
                 {
-                    RelocateMediaWindow();
-                }
-                else
-                {
-                    // media monitor = "None"
-                    CloseMediaWindow();
+                    case MonitorChangeDescription.NoneToMonitor:
+                    case MonitorChangeDescription.MonitorToMonitor:
+                    case MonitorChangeDescription.MonitorToWindow:
+                    case MonitorChangeDescription.NoneToWindow:
+                    case MonitorChangeDescription.WindowToMonitor:
+                        RelocateMediaWindow();
+                        break;
+
+                    case MonitorChangeDescription.WindowToNone:
+                    case MonitorChangeDescription.MonitorToNone:
+                        CloseMediaWindow();
+                        break;
                 }
 
-                MediaMonitorChangedEvent?.Invoke(this, EventArgs.Empty);
+                MediaMonitorChangedEvent?.Invoke(this, new MonitorChangedEventArgs { Change = change });
                 System.Windows.Application.Current.MainWindow?.Activate();
             }
             catch (Exception ex)
@@ -444,7 +475,7 @@
                 BringJwlToFront();
 
                 UnsubscribeMediaWindowEvents();
-
+                
                 _mediaWindow.Close();
                 _mediaWindow.Dispose();
                 _mediaWindow = null;
@@ -474,16 +505,29 @@
 
                 if (requiresVisibleWindow)
                 {
-                    var targetMonitor = _monitorsService.GetSystemMonitor(_optionsService.MediaMonitorId);
-                    if (targetMonitor != null)
+                    var isWindowed = _optionsService.MediaWindowed;
+                    if (isWindowed)
                     {
-                        Log.Logger.Information("Opening media window");
+                        Log.Logger.Information("Opening media window (windowed)");
 
-                        PositionMediaWindow(_mediaWindow, targetMonitor.Monitor, isVideo);
+                        PositionMediaWindowWindowed();
 
-                        _mediaWindow.Topmost = true;
+                        MediaWindowOpenedEvent?.Invoke(this, EventArgs.Empty);
+                    }
+                    else
+                    {
+                        var targetMonitor = _monitorsService.GetSystemMonitor(_optionsService.MediaMonitorId);
 
-                        _mediaWindow.Show();
+                        if (targetMonitor == null)
+                        {
+                            return;
+                        }
+
+                        Log.Logger.Information("Opening media window in monitor");
+
+                        _mediaWindow.IsWindowed = false;
+
+                        PositionMediaWindowFullScreenMonitor(targetMonitor.Monitor, isVideo);
 
                         MediaWindowOpenedEvent?.Invoke(this, EventArgs.Empty);
                     }

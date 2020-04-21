@@ -5,15 +5,16 @@
     using System.Threading.Tasks;
     using System.Windows;
     using System.Windows.Controls;
-    using MediaElementAdaption;
-    using Models;
+    using OnlyM.Core.Models;
+    using OnlyM.MediaElementAdaption;
+    using OnlyM.Models;
     using OnlyM.Services.WebBrowser;
 
     internal interface IPageService
     {
         event EventHandler<NavigationEventArgs> NavigationEvent;
 
-        event EventHandler MediaMonitorChangedEvent;
+        event EventHandler<MonitorChangedEventArgs> MediaMonitorChangedEvent;
 
         event EventHandler<MediaEventArgs> MediaChangeEvent;
 
